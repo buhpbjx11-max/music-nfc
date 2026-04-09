@@ -85,13 +85,12 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
         }
 
-        #record-img {
-            width: 120%;
-            height: 120%;
-            object-fit: cover;
-            transform: scale(1.2); /* Hide white edges from source PNG */
-            pointer-events: none;
-        }
+       #record-img {
+    width: 120%;
+    height: 120%;
+    object-fit: contain;
+    pointer-events: none;
+}
 
         /* Play Button Overlay */
         #play-btn {
@@ -196,7 +195,7 @@
                 record: 'record3.png',
                 audio: 'song3.mp3',
                 title: 'חוזה בנשמה'
-                   },
+            },
             '4': {
                 bg: 'bg4.jpg',
                 record: 'record4.png',
