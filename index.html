@@ -1,187 +1,258 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="he">
-<head>
+
+<html dir="rtl" lang="he"><head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
 <title>Sonic NFC Player</title>
-
 <style>
-•⁠  ⁠{
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-body, html {
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    background: #000;
-    font-family: Arial;
-}
+        body, html {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
 
-#app {
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+        #app {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
 
-/* BACKGROUND */
-#bg-container {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-}
+        /* Background Layer */
+        #bg-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            overflow: hidden;
+        }
 
-#bg-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    filter: blur(30px) brightness(0.5);
-}
+        #bg-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: blur(30px) brightness(0.5);
+            transform: scale(1.1); /* Avoid edge artifacts */
+            transition: opacity 1s ease;
+        }
 
-/* CONTENT */
-#content {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-}
+        /* Dark Overlay for contrast */
+        #bg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 2;
+        }
 
-/* RECORD */
-.record-container {
-    width: 90vw;
-    max-width: 500px;
-    aspect-ratio: 1/1;
-    border-radius: 50%;
-    overflow: hidden;
-    position: relative;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-}
+        /* Content Layer */
+        #content {
+            position: relative;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
 
-#record-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transform: scale(1.08);
-}
+        /* Vinyl Record Container */
+        .record-container {
+            position: relative;
+            width: 90vw;
+            max-width: 500px;
+            aspect-ratio: 1/1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            overflow: hidden; /* Clips the scaled image */
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
 
-/* BUTTON */
-#play-btn {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80px;
-    height: 80px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-}
+        #record-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.2); /* Hide white edges from source PNG */
+            pointer-events: none;
+        }
 
-#play-btn svg {
-    width: 30px;
-    fill: white;
-}
+        /* Play Button Overlay */
+        #play-btn {
+            position: absolute;
+            width: 85px;
+            height: 85px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 4;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s ease;
+        }
 
-/* TITLE */
-#song-title {
-    margin-top: 40px;
-    color: white;
-    font-size: 24px;
-}
+        #play-btn svg {
+            width: 36px;
+            height: 36px;
+            fill: white;
+            margin-left: 4px; /* Visual centering for triangle icon */
+        }
 
-/* ANIMATION */
-@keyframes spin {
-    from { transform: rotate(0deg) scale(1.08); }
-    to { transform: rotate(360deg) scale(1.08); }
-}
+        #play-btn.playing {
+            transform: scale(2.5);
+            opacity: 0;
+            pointer-events: none;
+        }
 
-.spinning {
-    animation: spin 10s linear infinite;
-}
+        /* Animations */
+        @keyframes spin {
+            from { transform: rotate(0deg) scale(1.2); }
+            to { transform: rotate(360deg) scale(1.2); }
+        }
 
-audio {
-    display: none;
-}
-</style>
+        .spinning {
+            animation: spin 10s linear infinite;
+        }
+
+        /* Song Title */
+        #song-title {
+            margin-top: 50px;
+            color: white;
+            font-size: 26px;
+            font-weight: 600;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+            text-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            padding: 0 20px;
+        }
+
+        #song-title.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Hidden Audio Element */
+        audio {
+            display: none;
+        }
+    </style>
 </head>
-
 <body>
-
 <div id="app">
-
 <div id="bg-container">
-    <img id="bg-image" src="">
+<img alt="" id="bg-image" src=""/>
+<div id="bg-overlay"></div>
 </div>
-
 <div id="content">
-
-    <div class="record-container">
-        <img id="record-img" src="">
-        
-        <div id="play-btn">
-            <svg viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"></path>
-            </svg>
-        </div>
-    </div>
-
-    <h1 id="song-title"></h1>
-
+<div class="record-container">
+<img alt="" id="record-img" src="" style="will-change: transform;"/>
+<div id="play-btn" style="transition: opacity 0.5s ease, transform 0.5s ease;">
+<svg viewbox="0 0 24 24">
+<path d="M8 5v14l11-7z"></path>
+</svg>
 </div>
-
-<audio id="audio-player"></audio>
-
 </div>
+<h1 id="song-title"></h1>
+</div>
+<audio id="audio-player" preload="auto"></audio>
+</div>
+<script>const songData = {
+            '1': {
+                bg: 'bg1.jpg',
+                record: 'record1.png',
+                audio: 'song1.mp3',
+                title: 'אהבה ממבט ראשון'
+            },
+            '2': {
+                bg: 'bg2.jpg',
+                record: 'record2.png',
+                audio: 'song2.mp3',
+                title: 'הפרח בגני'
+            },
+            '3': {
+                bg: 'bg3.jpg',
+                record: 'record3.png',
+                audio: 'song3.mp3',
+                title: 'חוזה בנשמה'
+            }
+        };
 
-<script>
+        const bgImg = document.getElementById('bg-image');
+        const recordImg = document.getElementById('record-img');
+        const songTitle = document.getElementById('song-title');
+        const playBtn = document.getElementById('play-btn');
+        const audioPlayer = document.getElementById('audio-player');
 
-/* 🎯 פה את מוסיפה שירים כמה שבא לך */
-const songData = {
-    '1': { bg:'bg1.jpg', record:'record1.png', audio:'song1.mp3', title:'אהבה ממבט ראשון' },
-    '2': { bg:'bg2.jpg', record:'record2.png', audio:'song2.mp3', title:'הפרח בגני' },
-    '3': { bg:'bg3.jpg', record:'record3.png', audio:'song3.mp3', title:'חוזה בנשמה' },
-    '4': { bg:'bg4.jpg', record:'record4.png', audio:'song4.mp3', title:'גברת טיקטוק' }
-};
+        let isPlaying = false;
 
-const bgImg = document.getElementById('bg-image');
-const recordImg = document.getElementById('record-img');
-const title = document.getElementById('song-title');
-const audio = document.getElementById('audio-player');
-const playBtn = document.getElementById('play-btn');
+        function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const songId = urlParams.get('song') || '1';
+            const data = songData[songId] || songData['1'];
 
-let playing = false;
+            bgImg.src = data.bg;
+            recordImg.src = data.record;
+            audioPlayer.src = data.audio;
+            songTitle.innerText = data.title;
+        }
 
-function init() {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('song') || '1';
+        function fadeInVolume(audio, duration) {
+            audio.volume = 0;
+            const start = performance.now();
+            
+            function update(now) {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                audio.volume = progress;
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            requestAnimationFrame(update);
+        }
 
-    const data = songData[id] || songData['1'];
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) return;
+            isPlaying = true;
+            
+            audioPlayer.volume = 0;
+            audioPlayer.play().then(() => {
+                fadeInVolume(audioPlayer, 1000);
+                
+                playBtn.classList.add('playing');
+                recordImg.classList.add('spinning');
+                
+                setTimeout(() => {
+                    songTitle.classList.add('visible');
+                }, 400);
+            }).catch(error => {
+                console.error("Playback failed:", error);
+                isPlaying = false; // Allow retry on error
+                // Visual feedback for error could go here
+            });
+        });
 
-    bgImg.src = data.bg;
-    recordImg.src = data.record;
-    audio.src = data.audio;
-    title.innerText = data.title;
-}
-
-playBtn.onclick = () => {
-    if (playing) return;
-
-    playing = true;
-    audio.play();
-
-    recordImg.classList.add('spinning');
-    playBtn.style.display = "none";
-};
-
-window.onload = init;
-
-</script>
-
-</body>
-</html>
+        window.addEventListener('DOMContentLoaded', init);</script>
+</body></html>
